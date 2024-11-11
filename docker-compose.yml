@@ -1,0 +1,57 @@
+version: '3.8'
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  mongo:
+    image: mongo:5.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15.0 
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+    networks:
+      - app-network
+
+  app:
+    build:  
+      context: .
+      dockerfile: Dockerfile
+    container_name: soundscroll_app
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=mongodb://root:example@mongo:27017
+      - MONGO_DATABASE=soundscroll
+      - POSTGRES_HOST=postgres
+      - POSTGRES_NAME=${POSTGRES_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=5432
+    depends_on:
+      - mongo
+      - postgres
+
+
+volumes:
+  mongo_data:
+  postgres_data:
